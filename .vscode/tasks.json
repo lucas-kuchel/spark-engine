@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "debug configure",
+            "type": "shell",
+            "command": "cmake -B build --preset debug",
+        },
+        {
+            "label": "debug build",
+            "type": "shell",
+            "command": "cmake --build build --preset debug",
+            "dependsOn": "debug configure",
+        },
+        {
+            "label": "release configure",
+            "type": "shell",
+            "command": "cmake -B build --preset release",
+        },
+        {
+            "label": "release build",
+            "type": "shell",
+            "command": "cmake --build build --preset release",
+            "dependsOn": "release configure",
+        }
+    ]
+}

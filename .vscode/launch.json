@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "run w. debugger",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/spark-test/spark-test",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "debug build",
+        },
+        {
+            "name": "run",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/spark-test/spark-test",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "release build",
+        }
+    ]
+}
