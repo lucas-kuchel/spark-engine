@@ -1,126 +1,126 @@
 #include <chrono>
-#include <iostream>
+#include <entt/entt.hpp>
+#include <print>
 #include <spark/spark.hpp>
-#include <vector>
 
-using namespace std::chrono;
+static constexpr int Iterations = 100'000'000;
 
-class new_growth_policy {
-public:
-    template <typename T = spark::uint64>
-    requires(spark::is_unsigned<T>)
-    inline constexpr static T expand(T minimum, T current) noexcept {
-        return spark::max(spark::max(static_cast<T>(16), minimum), static_cast<spark::uint64>(4 * current));
-    }
+struct Event {
+    float val;
 };
 
-// Timing helper
+void handler(const Event& e) {
+    (void)e; // avoid dead-code elimination
+}
+
 template <typename F>
-long long benchmark(F&& func, size_t iterations = 1) {
-    auto start = high_resolution_clock::now();
-    for (size_t i = 0; i < iterations; ++i)
-        func();
-    auto end = high_resolution_clock::now();
-    return duration_cast<nanoseconds>(end - start).count();
+double timeit(F&& fn) {
+    auto begin = std::chrono::steady_clock::now();
+    fn();
+    auto end = std::chrono::steady_clock::now();
+
+    auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+    return ns / 1'000'000.0; // convert to milliseconds as double
 }
 
-// ------------------- spark::list benchmarks -------------------
-long long benchmark_spark_push(size_t n) {
-    return benchmark([&] {
-        spark::list<int, spark::uint64, new_growth_policy> l;
-        for (size_t i = 0; i < n; ++i)
-            l.push(i);
-    });
-}
-
-long long benchmark_spark_resize_clear(size_t n) {
-    return benchmark([&] {
-        spark::list<int, spark::uint64, new_growth_policy> l;
-        for (size_t i = 0; i < n; ++i) {
-            l.resize(n * 2, 42);
-            l.resize(n / 2);
-            while (!l.empty())
-                l.pop();
-        }
-    });
-}
-
-long long benchmark_spark_swap_pop(size_t n) {
-    return benchmark([&] {
-        spark::list<int, spark::uint64, new_growth_policy> l;
-        for (size_t i = 0; i < n; ++i)
-            l.push(i);
-
-        // Swap from front
-        size_t half = n / 2;
-        for (size_t i = 0; i < half; ++i)
-            l.swap(i, half + i);
-
-        // Pop all
-        while (!l.empty())
-            l.pop();
-    });
-}
-
-// ------------------- std::vector benchmarks -------------------
-long long benchmark_vector_push(size_t n) {
-    return benchmark([&] {
-        std::vector<int> v;
-        for (size_t i = 0; i < n; ++i)
-            v.push_back(i);
-    });
-}
-
-long long benchmark_vector_resize_clear(size_t n) {
-    return benchmark([&] {
-        std::vector<int> v;
-        for (size_t i = 0; i < n; ++i) {
-            v.resize(n * 2, 42);
-            v.resize(n / 2);
-            while (!v.empty())
-                v.pop_back();
-        }
-    });
-}
-
-long long benchmark_vector_swap_pop(size_t n) {
-    return benchmark([&] {
-        std::vector<int> v;
-        for (size_t i = 0; i < n; ++i)
-            v.push_back(i);
-
-        // Swap from front
-        size_t half = n / 2;
-        for (size_t i = 0; i < half; ++i)
-            std::swap(v[i], v[half + i]);
-
-        // Pop all
-        while (!v.empty())
-            v.pop_back();
-    });
-}
-
-// ------------------- main -------------------
 int main() {
-    constexpr size_t n = 65536 * 2;
+    std::println("iterations: {}\n", Iterations);
 
-    auto spark_push = benchmark_spark_push(n) / 1'000'000.0;
-    auto spark_resize = benchmark_spark_resize_clear(n) / 1'000'000.0;
-    auto spark_swap = benchmark_spark_swap_pop(n) / 1'000'000.0;
+    {
+        std::println("=== Immediate Dispatch Benchmark ===");
 
-    auto vector_push = benchmark_vector_push(n) / 1'000'000.0;
-    auto vector_resize = benchmark_vector_resize_clear(n) / 1'000'000.0;
-    auto vector_swap = benchmark_vector_swap_pop(n) / 1'000'000.0;
+        spark::dispatcher sdisp;
+        entt::dispatcher edisp;
 
-    std::cout << "spark::list:\n";
-    std::cout << "Push:       " << spark_push << " ms\n";
-    std::cout << "Resize/Clear: " << spark_resize << " ms\n";
-    std::cout << "Swap/Pop:   " << spark_swap << " ms\n\n";
+        sdisp.sink<Event>().connect<handler>();
+        edisp.sink<Event>().connect<handler>();
 
-    std::cout << "std::vector:\n";
-    std::cout << "Push:       " << vector_push << " ms\n";
-    std::cout << "Resize/Clear: " << vector_resize << " ms\n";
-    std::cout << "Swap/Pop:   " << vector_swap << " ms\n";
+        auto e_time = timeit([&] {
+            for (int i = 0; i < Iterations; i++)
+                edisp.trigger<Event>(1.0f);
+        });
+
+        auto s_time = timeit([&] {
+            for (int i = 0; i < Iterations; i++)
+                sdisp.trigger<Event>(1.0f);
+        });
+
+        std::println("spark::dispatcher: {} ms", s_time);
+        std::println("entt::dispatcher : {} ms", e_time);
+
+        std::println("spark::dispatcher [average call]: {} ns", (s_time * 1000000.0) / Iterations);
+        std::println("entt::dispatcher  [average call]: {} ns", (e_time * 1000000.0) / Iterations);
+    }
+
+    {
+        std::println("\n=== Queued Dispatch Benchmark ===");
+
+        spark::dispatcher sdisp;
+        entt::dispatcher edisp;
+
+        sdisp.sink<Event>().connect<handler>();
+        edisp.sink<Event>().connect<handler>();
+
+        auto e_time = timeit([&] {
+            for (int i = 0; i < Iterations; i++)
+                edisp.enqueue<Event>(1.0f);
+            edisp.update<Event>();
+        });
+
+        auto s_time = timeit([&] {
+            for (int i = 0; i < Iterations; i++)
+                sdisp.enqueue<Event>(1.0f);
+            sdisp.update();
+        });
+
+        std::println("spark::dispatcher: {} ms", s_time);
+        std::println("entt::dispatcher : {} ms", e_time);
+
+        std::println("spark::dispatcher [average call]: {} ns", (s_time * 1000000.0) / Iterations);
+        std::println("entt::dispatcher  [average call]: {} ns", (e_time * 1000000.0) / Iterations);
+    }
+
+    {
+        std::println("\n=== Connect/Disconnect Benchmark ===");
+
+        entt::dispatcher ed;
+        auto ec_time = timeit([&] {
+            for (int i = 0; i < Iterations; i++) {
+                ed.sink<Event>().connect<handler>();
+            }
+        });
+
+        spark::dispatcher sd;
+        auto sc_time = timeit([&] {
+            for (int i = 0; i < Iterations; i++) {
+                sd.sink<Event>().connect<handler>();
+            }
+        });
+
+        auto ed_time = timeit([&] {
+            for (int i = 0; i < Iterations; i++) {
+                ed.sink<Event>().disconnect<handler>();
+            }
+        });
+
+        auto sd_time = timeit([&] {
+            for (int i = 0; i < Iterations; i++) {
+                sd.sink<Event>().disconnect<handler>();
+            }
+        });
+
+        std::println("spark::dispatcher [connect]: {} ms", sc_time);
+        std::println("entt::dispatcher  [connect]: {} ms", ec_time);
+
+        std::println("spark::dispatcher [disconnect]: {} ms", sd_time);
+        std::println("entt::dispatcher  [disconnect]: {} ms", ed_time);
+
+        std::println("spark::dispatcher [average call] [connect]: {} ns", (sc_time * 1000000.0) / Iterations);
+        std::println("entt::dispatcher  [average call] [connect]: {} ns", (ec_time * 1000000.0) / Iterations);
+
+        std::println("spark::dispatcher [average call] [disconnect]: {} ns", (sd_time * 1000000.0) / Iterations);
+        std::println("entt::dispatcher  [average call] [disconnect]: {} ns", (ed_time * 1000000.0) / Iterations);
+    }
 
     return 0;
 }
