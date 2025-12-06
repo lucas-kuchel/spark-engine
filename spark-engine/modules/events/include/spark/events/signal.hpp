@@ -4,7 +4,7 @@
 #include <utility>
 #include <vector>
 
-#include <spark/events/connection.hpp>
+#include <spark/events/connections.hpp>
 
 namespace spark::events {
     class signal {
@@ -20,56 +20,62 @@ namespace spark::events {
 
         template <typename T, auto Fn>
         constexpr void connect() {
-            connections_.emplace_back(nullptr, invoke_free<T, Fn>);
+            freeConnections_.emplace_back(invoke_free<T, Fn>);
         }
 
         template <typename T, auto Fn, typename U>
         constexpr void connect(U& instance) {
-            connections_.emplace_back(&instance, invoke_member<T, Fn, U>);
+            memberConnections_.emplace_back(&instance, invoke_member<T, Fn, U>);
         }
 
         template <typename T, auto Fn>
         constexpr void disconnect() {
-            for (std::size_t i = connections_.size(); i-- > 0;) {
-                connection& connection = connections_[i];
+            for (std::size_t i = freeConnections_.size(); i-- > 0;) {
+                free_connection& connection = freeConnections_[i];
 
-                if (connection.equals(nullptr, invoke_free<T, Fn>)) {
-                    std::swap(connections_[i], connections_.back());
+                if (connection.equals(invoke_free<T, Fn>)) {
+                    std::swap(connection, freeConnections_.back());
 
-                    connections_.pop_back();
+                    freeConnections_.pop_back();
                 }
             }
         }
 
         template <typename T, auto Fn, typename U>
         constexpr void disconnect(U& instance) {
-            for (std::size_t i = connections_.size(); i-- > 0;) {
-                connection& connection = connections_[i];
+            for (std::size_t i = memberConnections_.size(); i-- > 0;) {
+                member_connection& connection = memberConnections_[i];
 
                 if (connection.equals(&instance, invoke_member<T, Fn, U>)) {
-                    std::swap(connections_[i], connections_.back());
+                    std::swap(connection, memberConnections_.back());
 
-                    connections_.pop_back();
+                    memberConnections_.pop_back();
                 }
             }
         }
 
         template <typename T>
         constexpr void invoke(const T& event) {
-            for (connection& connection : connections_) {
+            for (free_connection& connection : freeConnections_) {
+                connection.invoke(event);
+            }
+
+            for (member_connection& connection : memberConnections_) {
                 connection.invoke(event);
             }
         }
 
         constexpr void clear() {
-            connections_.clear();
+            freeConnections_.clear();
+            memberConnections_.clear();
         }
 
     private:
-        std::vector<connection> connections_;
+        std::vector<free_connection> freeConnections_;
+        std::vector<member_connection> memberConnections_;
 
         template <typename T, auto Fn>
-        static void invoke_free(void*, const void* event) {
+        static void invoke_free(const void* event) {
             Fn(*static_cast<const T*>(event));
         }
 

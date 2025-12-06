@@ -21,8 +21,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(entt)
 
-
-
 target_link_libraries(spark-test PRIVATE
     spark::spark
     EnTT::EnTT
