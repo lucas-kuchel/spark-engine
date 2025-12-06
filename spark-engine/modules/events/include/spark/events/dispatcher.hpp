@@ -25,7 +25,7 @@ namespace spark::events {
 
         template <typename T>
         constexpr void drain() {
-            std::size_t index = detail::type_index<T>();
+            std::size_t index = events::detail::type_index<T>();
 
             family_delegate& delegate = families_[index];
             family<T>& family = delegate.get<T>();
@@ -36,7 +36,7 @@ namespace spark::events {
 
         template <typename T, typename... Args>
         constexpr void trigger(Args&&... args) {
-            std::size_t index = detail::type_index<T>();
+            std::size_t index = events::detail::type_index<T>();
 
             family_delegate& delegate = families_[index];
             family<T>& family = delegate.get<T>();
@@ -49,7 +49,7 @@ namespace spark::events {
 
         template <typename T, typename... Args>
         constexpr void enqueue(Args&&... args) {
-            std::size_t index = detail::type_index<T>();
+            std::size_t index = events::detail::type_index<T>();
 
             family_delegate& delegate = families_[index];
             family<T>& family = delegate.get<T>();
@@ -67,7 +67,7 @@ namespace spark::events {
     private:
         template <typename T>
         std::size_t acquireFamilyIndex() {
-            std::size_t index = detail::type_index<T>();
+            std::size_t index = events::detail::type_index<T>();
 
             if (index + 1 > families_.size()) {
                 families_.resize(index + 1);
@@ -76,6 +76,10 @@ namespace spark::events {
             family_delegate& delegate = families_[index];
 
             if (delegate.needs_init()) {
+                family<T>& family = delegate.get<T>();
+
+                ::new (&family) spark::events::family<T>();
+
                 delegate.set_destructor<T>();
                 delegate.set_invoke<T>();
             }

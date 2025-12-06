@@ -40,14 +40,35 @@ namespace spark::events {
     public:
         family_delegate() = default;
         ~family_delegate() {
-            destructor_(buffer);
+            if (destructor_) {
+                destructor_(buffer_);
+            }
         }
 
         family_delegate(const family_delegate&) = delete;
-        family_delegate(family_delegate&&) noexcept = default;
+
+        family_delegate(family_delegate&& other) noexcept {
+            std::memcpy(buffer_, other.buffer_, sizeof(buffer_));
+
+            destructor_ = other.destructor_;
+            invoke_ = other.invoke_;
+
+            other.destructor_ = nullptr;
+            other.invoke_ = nullptr;
+        }
 
         family_delegate& operator=(const family_delegate&) = delete;
-        family_delegate& operator=(family_delegate&&) noexcept = default;
+
+        family_delegate& operator=(family_delegate&& other) noexcept {
+            std::memcpy(buffer_, other.buffer_, sizeof(buffer_));
+            destructor_ = other.destructor_;
+            invoke_ = other.invoke_;
+
+            other.destructor_ = nullptr;
+            other.invoke_ = nullptr;
+
+            return *this;
+        }
 
         template <typename T>
         constexpr void set_destructor() {
@@ -64,17 +85,17 @@ namespace spark::events {
         }
 
         constexpr void invoke() {
-            invoke_(buffer);
+            invoke_(buffer_);
         }
 
         template <typename T>
         family<T>& get() {
-            return *reinterpret_cast<family<T>*>(buffer);
+            return *reinterpret_cast<family<T>*>(buffer_);
         }
 
         template <typename T>
         const family<T>& get() const {
-            return *reinterpret_cast<const family<T>*>(buffer);
+            return *reinterpret_cast<const family<T>*>(buffer_);
         }
 
     private:
@@ -82,14 +103,14 @@ namespace spark::events {
         using destructor_fn_type = void (*)(void*);
         using invoke_fn_type = void (*)(void*);
 
-        alignas(family_mock_type) std::byte buffer[sizeof(family_mock_type)];
+        alignas(family_mock_type) std::byte buffer_[sizeof(family_mock_type)];
 
-        destructor_fn_type destructor_;
-        invoke_fn_type invoke_;
+        destructor_fn_type destructor_ = nullptr;
+        invoke_fn_type invoke_ = nullptr;
 
         template <typename T>
         constexpr static void destruct(void* memory) {
-            reinterpret_cast<const family<T>*>(memory)->~family<T>();
+            reinterpret_cast<family<T>*>(memory)->~family<T>();
         }
 
         template <typename T>
@@ -101,6 +122,8 @@ namespace spark::events {
             for (const T& event : queue) {
                 signal.invoke(event);
             }
+
+            signal.clear();
         }
     };
 }

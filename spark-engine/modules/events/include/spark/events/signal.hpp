@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -34,7 +33,7 @@ namespace spark::events {
                 free_connection& connection = *it;
 
                 if (connection.equals(invoke_free<T, Fn>)) {
-                    std::swap(connection, freeConnections_.back());
+                    connection = std::move(freeConnections_.back());
 
                     freeConnections_.pop_back();
 
@@ -49,7 +48,7 @@ namespace spark::events {
                 member_connection& connection = *it;
 
                 if (connection.equals(&instance, invoke_member<T, Fn, U>)) {
-                    std::swap(connection, memberConnections_.back());
+                    connection = std::move(memberConnections_.back());
 
                     memberConnections_.pop_back();
 
@@ -79,12 +78,12 @@ namespace spark::events {
         std::vector<member_connection> memberConnections_;
 
         template <typename T, auto Fn>
-        static void invoke_free(const void* event) {
+        static void invoke_free(const void* event) noexcept {
             Fn(*static_cast<const T*>(event));
         }
 
         template <typename T, auto Fn, typename U>
-        static void invoke_member(void* instance, const void* event) {
+        static void invoke_member(void* instance, const void* event) noexcept {
             (static_cast<U*>(instance)->Fn)(*static_cast<const T*>(event));
         }
     };
