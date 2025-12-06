@@ -30,26 +30,30 @@ namespace spark::events {
 
         template <typename T, auto Fn>
         constexpr void disconnect() {
-            for (std::size_t i = freeConnections_.size(); i-- > 0;) {
-                free_connection& connection = freeConnections_[i];
+            for (auto it = freeConnections_.rbegin(); it != freeConnections_.rend(); ++it) {
+                free_connection& connection = *it;
 
                 if (connection.equals(invoke_free<T, Fn>)) {
                     std::swap(connection, freeConnections_.back());
 
                     freeConnections_.pop_back();
+
+                    break;
                 }
             }
         }
 
         template <typename T, auto Fn, typename U>
         constexpr void disconnect(U& instance) {
-            for (std::size_t i = memberConnections_.size(); i-- > 0;) {
-                member_connection& connection = memberConnections_[i];
+            for (auto it = memberConnections_.rbegin(); it != memberConnections_.rend(); ++it) {
+                member_connection& connection = *it;
 
                 if (connection.equals(&instance, invoke_member<T, Fn, U>)) {
                     std::swap(connection, memberConnections_.back());
 
                     memberConnections_.pop_back();
+
+                    break;
                 }
             }
         }
