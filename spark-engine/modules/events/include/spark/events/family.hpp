@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstring>
+
 #include <spark/events/signal.hpp>
 
 namespace spark::events {
