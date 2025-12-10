@@ -44,6 +44,7 @@ namespace spark::events {
         ~family_delegate() {
             if (destructor_) {
                 destructor_(buffer_);
+                destructor_ = nullptr;
             }
         }
 
@@ -63,6 +64,7 @@ namespace spark::events {
 
         family_delegate& operator=(family_delegate&& other) noexcept {
             std::memcpy(buffer_, other.buffer_, sizeof(buffer_));
+
             destructor_ = other.destructor_;
             invoke_ = other.invoke_;
 

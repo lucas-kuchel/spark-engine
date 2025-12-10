@@ -1,7 +1,7 @@
 #pragma once
 
-#include <spark/core/print.hpp>
+#include <spark/ecs/registry.hpp>
 
 namespace spark {
-    using namespace core;
+    using namespace ecs;
 }

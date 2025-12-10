@@ -69,7 +69,7 @@ namespace spark::events {
         std::size_t acquireFamilyIndex() {
             std::size_t index = events::detail::type_index<T>();
 
-            if (index + 1 > families_.size()) {
+            if (index >= families_.size()) {
                 families_.resize(index + 1);
             }
 

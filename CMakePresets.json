@@ -7,8 +7,8 @@
     "configurePresets": [
         {
             "name": "debug",
-            "displayName": "Debug Build",
-            "description": "builds spark-test for debugging",
+            "displayName": "debug",
+            "description": "builds for debugging",
             "hidden": false,
             "generator": "Ninja",
             "cacheVariables": {
@@ -21,8 +21,8 @@
         },
         {
             "name": "release",
-            "displayName": "Release Build",
-            "description": "builds spark-test for release",
+            "displayName": "release",
+            "description": "builds for release",
             "hidden": false,
             "generator": "Ninja",
             "cacheVariables": {
