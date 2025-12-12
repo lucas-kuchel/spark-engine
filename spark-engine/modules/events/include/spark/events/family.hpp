@@ -127,7 +127,7 @@ namespace spark::events {
                 signal.invoke(event);
             }
 
-            signal.clear();
+            queue.clear();
         }
     };
 }
