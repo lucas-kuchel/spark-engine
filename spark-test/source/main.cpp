@@ -5,8 +5,12 @@ struct FixedStep {
 
 class Application {
 public:
-    void startup() {
+    Application() {
         dispatcher_.sink<FixedStep>().connect<Application::fixstep>();
+    }
+
+    ~Application() {
+        dispatcher_.sink<FixedStep>().disconnect<Application::fixstep>();
     }
 
     void update(double deltaTime) {
@@ -20,10 +24,6 @@ public:
         dispatcher_.update();
     }
 
-    void shutdown() {
-        dispatcher_.sink<FixedStep>().disconnect<Application::fixstep>();
-    }
-
     [[nodiscard]] bool running() {
         return true;
     }
@@ -34,7 +34,7 @@ public:
 
 private:
     double accum_ = 0.0;
-    double fixedStep_ = 1.0 / 2.0;
+    double fixedStep_ = 1.0 / 1.0;
 
     spark::dispatcher dispatcher_;
     spark::registry registry_;
@@ -42,4 +42,8 @@ private:
 
 int main() {
     spark::program<Application> program;
+
+    program.run();
+
+    return 0;
 }
