@@ -129,6 +129,52 @@ namespace spark::math {
             return *this;
         }
 
+        [[nodiscard]] constexpr T& x() noexcept requires(N >= 1)
+        {
+            return elements_[0];
+        }
+
+        [[nodiscard]] constexpr const T& x() const noexcept requires(N >= 1)
+        {
+            return elements_[0];
+        }
+
+        [[nodiscard]] constexpr T& y() noexcept requires(N >= 2)
+        {
+            return elements_[1];
+        }
+
+        [[nodiscard]] constexpr const T& y() const noexcept requires(N >= 2)
+        {
+            return elements_[1];
+        }
+
+        [[nodiscard]] constexpr T& z() noexcept requires(N >= 3)
+        {
+            return elements_[2];
+        }
+
+        [[nodiscard]] constexpr const T& z() const noexcept requires(N >= 3)
+        {
+            return elements_[2];
+        }
+
+        [[nodiscard]] constexpr T& w() noexcept requires(N >= 4)
+        {
+            return elements_[3];
+        }
+
+        [[nodiscard]] constexpr const T& w() const noexcept requires(N >= 4)
+        {
+            return elements_[3];
+        }
+
+        template <std::size_t... Is>
+        [[nodiscard]] constexpr vector<sizeof...(Is), T> swizzle() const noexcept requires((Is < N) && ...)
+        {
+            return {elements_[Is]...};
+        }
+
     private:
         template <typename U, std::size_t... Is>
         constexpr void copy(const vector<N, U>& other, std::index_sequence<Is...>) noexcept {
