@@ -170,8 +170,8 @@ namespace spark::math {
         }
 
         template <std::size_t... Is>
-        [[nodiscard]] constexpr vector<sizeof...(Is), T> swizzle() const noexcept requires((Is < N) && ...)
-        {
+        requires(((Is < N) && ...) && sizeof...(Is) >= 2)
+        [[nodiscard]] constexpr vector<sizeof...(Is), T> swizzle() const noexcept {
             return {elements_[Is]...};
         }
 
