@@ -1,17 +1,20 @@
-add_library(spark_spark INTERFACE)
+function(declare_submodule name alias)
+    add_library(${name} INTERFACE)
+
+    target_include_directories(${name} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(${name} INTERFACE ${ARGN})
+
+    add_library(${alias} ALIAS ${name})
+endfunction()
 
 add_subdirectory(modules/core)
 add_subdirectory(modules/ecs)
 add_subdirectory(modules/events)
+add_subdirectory(modules/math)
 
-target_include_directories(spark_spark INTERFACE
-    "include"
-)
-
-target_link_libraries(spark_spark INTERFACE
+declare_submodule(spark_spark spark::spark
     spark::core
     spark::ecs
     spark::events
+    spark::math
 )
-
-add_library(spark::spark ALIAS spark_spark)
