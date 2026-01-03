@@ -5,3 +5,9 @@ find_package(Vulkan QUIET)
 set(SPARK_GRAPHICS_FOUND ${Vulkan_FOUND})
 
 include("${CMAKE_CURRENT_LIST_DIR}/sparkTargets.cmake")
+
+if(CMAKE_CXX_STANDARD GREATER_EQUAL 23)
+    add_compile_definitions(SPARK_SUPPORTED=1)
+else()
+    add_compile_definitions(SPARK_SUPPORTED=0)
+endif()

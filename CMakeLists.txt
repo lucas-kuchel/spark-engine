@@ -55,17 +55,6 @@ endfunction()
 add_library(spark INTERFACE)
 add_library(spark::spark ALIAS spark)
 
-target_compile_features(spark
-    INTERFACE
-    cxx_std_23
-)
-
-if(CMAKE_CXX_STANDARD GREATER_EQUAL 23)
-    target_compile_definitions(spark INTERFACE SPARK_SUPPORTED=1)
-else()
-    target_compile_definitions(spark INTERFACE SPARK_SUPPORTED=0)
-endif()
-
 target_compile_definitions(spark
     INTERFACE
     SPARK_VERSION_MAJOR=${SPARK_VERSION_MAJOR}
@@ -83,7 +72,7 @@ add_module(ecs)
 add_module(events)
 add_module(graphics)
 add_module(math)
-add_module(types)
+add_module(utility)
 
 get_property(SPARK_MODULE_TARGETS GLOBAL PROPERTY SPARK_MODULE_TARGETS)
 

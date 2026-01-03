@@ -18,8 +18,8 @@
 #include <spark/math/interface.hpp>
 #endif
 
-#ifdef SPARK_TYPES_AVAILABLE
-#include <spark/types/interface.hpp>
+#ifdef SPARK_UTILITY_AVAILABLE
+#include <spark/utility/interface.hpp>
 #endif
 
 #endif
