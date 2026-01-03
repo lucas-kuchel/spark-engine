@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(spark LANGUAGES CXX VERSION 0.1.0)
+set(SPARK_VERSION_MAJOR 0)
+set(SPARK_VERSION_MINOR 0)
+set(SPARK_VERSION_PATCH 0)
+
+project(spark LANGUAGES CXX VERSION ${SPARK_VERSION_MAJOR}.${SPARK_VERSION_MINOR}.${SPARK_VERSION_PATCH})
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -12,7 +16,7 @@ define_property(
 )
 
 function(create_submodule name)
-    set(target spark_${name})
+    set(target ${name})
 
     add_library(${target} INTERFACE)
     add_library(spark::${name} ALIAS ${target})
@@ -51,21 +55,29 @@ endfunction()
 add_library(spark INTERFACE)
 add_library(spark::spark ALIAS spark)
 
+target_compile_features(spark
+    INTERFACE
+    cxx_std_23
+)
+
 if(CMAKE_CXX_STANDARD GREATER_EQUAL 23)
     target_compile_definitions(spark INTERFACE SPARK_SUPPORTED=1)
 else()
     target_compile_definitions(spark INTERFACE SPARK_SUPPORTED=0)
 endif()
 
+target_compile_definitions(spark
+    INTERFACE
+    SPARK_VERSION_MAJOR=${SPARK_VERSION_MAJOR}
+    SPARK_VERSION_MINOR=${SPARK_VERSION_MINOR}
+    SPARK_VERSION_PATCH=${SPARK_VERSION_PATCH}
+)
+
 target_include_directories(spark
     INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-
-find_package(Vulkan QUIET)
-
-set(SPARK_GRAPHICS_FOUND ${Vulkan_FOUND})
 
 add_module(ecs)
 add_module(events)
